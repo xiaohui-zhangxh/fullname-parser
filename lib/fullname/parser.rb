@@ -1,4 +1,4 @@
-
+# encoding: utf-8
 require File.expand_path('../parser/version', __FILE__)
 
 module Fullname
@@ -101,6 +101,8 @@ module Fullname
       prefix      = nil
       suffix      = nil
       
+      # replace "’" to "'"
+      name = name.gsub(/’/, "'")
       # remove strings which contain and include in parentheses
       # ex. 'Susan M. (Scully) Schultz'  =>  'Susan M. Schultz'
       #     'Jay (Jung) Heum Kim'        =>  'Jay Heum Kim'
