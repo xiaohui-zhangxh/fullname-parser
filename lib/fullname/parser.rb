@@ -12,8 +12,7 @@ module Fullname
     #
     # Also almost nobody will reach to 'v'(except a king), so all suffixes later than 'v' we won't use.
     GENERATION_LIST = [
-      #'i',
-      'ii', 'iii', 'iv', 'v', 'vi',
+      'ii', 'iii', 'iv', 'v', 'vi'
       # 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx',
     ] unless const_defined?(:GENERATION_LIST)
     
