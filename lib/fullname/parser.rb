@@ -45,26 +45,30 @@ module Fullname
     SUFFIX_CAN_BE_LASTNAME = [
       'do',
     ] unless const_defined?(:SUFFIX_CAN_BE_LASTNAME)
-  
+    
     PREFIX_LIST = [ 
       'asst.',
+      'assoc.', 'associate',  # va law
+      'asst. dean', 'associate dean', 'interim dean',  # va law
       'attorney', 'atty.',
-      'bg', 'brig', 'gen',
-      'colonel', 'cardinal', 'capt', 'capt.', 'captain', 'cdr', 'col' , 'col.', 'congressman', 'cpt',
+      'bg', 'bg.', 'brig', 'brig.', 'gen',
+      'colonel', 'cardinal', 'capt', 'capt.', 'captain', 'cdr', 'col' , 'col.', 'congressman', 'cpt', 'cpt.', 'comm.',
+      'dean.',
       'dir.', 'dr', 'dr.',
       'exec.',
       'general', 'gen', 'gen.',
-      'honorable', 'hon', 'hon.',
+      'honorable', 'hon', 'hon.', 'honret.',
+      'interim', 'instructor',  # va law
       'judge', 'justice', 'chiefjustice',
-      'lieutenant', 'lcdr', 'lt', 'lt.', 'ltc', 'ltcol.', 'ltcol', 'ltjg', 
-      'mr', 'mr.', 'ms', 'ms.', 'mrs', 'mrs.', 'maj', 'maj.', 'major', 'miss',
+      'lieutenant', 'lcdr', 'lt', 'lt.', 'ltc', 'ltc.', 'ltcol.', 'ltcol', 'ltjg', 
+      'm/g', 'mr', 'mr.', 'mr..', 'ms', 'ms.', 'mrs', 'mrs.', 'maj', 'maj.', 'major', 'miss', 'miss.',
       'president', 'prof', 'prof.', 'professor',
+      'rabbi',
       'reverend', 'rev', 'rev.',
       'sheriff',
-      'sr', 'sr.'
-      
+      'sis.', 'sr', 'sr.'
     ] unless const_defined?(:PREFIX_LIST)
-  
+
     IGNORABLE_PREFIXS = [
       'the',
     ] unless const_defined?(:IGNORABLE_PREFIXS)
