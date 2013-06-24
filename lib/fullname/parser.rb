@@ -32,10 +32,15 @@ module Fullname
     ] unless const_defined?(:SUFFIX_LIST)
   
     IGNORABLE_SUFFIXES = [
-      'do', 'd.o.', 'd.o', 'dds', 'd.d.s.',
+      'do', 'd.o.', 'd.o', 'dds', 'd.d.s.', 'dr', 'dr.',
       'esq', 'esq.',
+      # Doctor suffixes
+      # http://books.google.com/books?id=J6kLNKw5baYC&pg=PA336&lpg=PA336&dq=faafp+faan+facaai&source=bl&ots=BJ4AvvSF9e&sig=Xj950-otl-X-tX_2I5DvGY4_uuE&hl=en&sa=X&ei=_9DHUdT2MOn6iwKR1oGAAw&ved=0CCoQ6AEwAA#v=onepage&q=faafp%20faan%20facaai&f=false
+      'faafp', 'faan', 'facaai', 'facc', 'facd', 'facg', 'faap', 'facog', 'facp', 'facpm', 'facs', 'facsm', 'fama', 'faota', 'fapa', 'fapha', 'fcap', 'fccp', 'fcps', 'fds', 'faao', 'fics',
       'md', 'm.d.', 'm.d',
       'mr.', 'ms.', 'mrs.',
+      'od', 'o.d.',
+      'pa', 'p.a.', 'ps', 'p.s.',
       'jd', 'jd.', 'j.d.',
       'retd', 'ret.', 'retd.',
       'usmc',
@@ -52,14 +57,13 @@ module Fullname
       'attorney', 'atty.',
       'bg', 'bg.', 'brig', 'brig.', 'gen',
       'colonel', 'cardinal', 'capt', 'capt.', 'captain', 'cdr', 'col' , 'col.', 'congressman', 'cpt', 'cpt.', 'comm.',
-      'dean.',
-      'dir.', 'dr', 'dr.',
+      'dean.', 'dentist', 'dir.', 'doctor', 'dr', 'dr.',
       'exec.',
       'general', 'gen', 'gen.',
       'honorable', 'hon', 'hon.', 'honret.',
       'interim', 'instructor',  # va law
       'judge', 'justice', 'chiefjustice',
-      'lieutenant', 'lcdr', 'lt', 'lt.', 'ltc', 'ltc.', 'ltcol.', 'ltcol', 'ltjg', 
+      'lawyer', 'lieutenant', 'lcdr', 'lt', 'lt.', 'ltc', 'ltc.', 'ltcol.', 'ltcol', 'ltjg', 
       'm/g', 'mr', 'mr.', 'mr..', 'ms', 'ms.', 'mrs', 'mrs.', 'maj', 'maj.', 'major', 'miss', 'miss.',
       'president', 'prof', 'prof.', 'professor',
       'rabbi',
