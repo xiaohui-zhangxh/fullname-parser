@@ -101,91 +101,174 @@ module Fullname
       '9th' => 'IX',
     } unless const_defined?(:CONVERSION)
     
+    class Error < StandardError; end
+    class Identifier
+      attr_reader :name, :original_name, :prefix, :firstname, :middlename, :lastname, :suffix
+      def initialize(name)
+        @original_name = name.dup
+        @name = name.dup
+        @prefix_list = []
+        @suffix_list = []
+        sanitize!
+        flip_parts!
+        breakup!
+      end
+
+      private
+
+      def sanitize!
+        # replace "’" to "'"
+        name.gsub!(/’/, "'")
+        # remove strings which contain and include in parentheses
+        # ex. 'Susan M. (Scully) Schultz'  =>  'Susan M. Schultz'
+        #     'Jay (Jung) Heum Kim'        =>  'Jay Heum Kim'
+        name.gsub!(/\(.*?\)/, ' ')
+        name.gsub!(/\(|\)/, '')
+        # remove quoted strings 
+        # Darin "Derry" Ronald Anderson    => 'Darin Ronald Anderson'
+        # Nancy M. "Shelli" Egger          => 'Nancy M. Egger'  
+        # Nicole 'nikki' Adame             => 'Nicole Adame'                  
+        name.gsub!(/".*?"/, ' ')
+        name.gsub!(/'.*?'/i, ' ')
+    
+        # remove curly brackets
+        # Henry C.{Harry} Wilson           => 'Henry C. Wilson'
+        # Cellestine {Steen} Armstrong     => 'Cellestine Armstrong'
+        name.gsub!(/\{.*?\}/, ' ')
+        # remove exceptional names
+        # ex. "William . D. 'Bill' Beard"  =>  "William D. 'Bill' Beard"
+        # also this regexp can remove 
+        name.gsub!(/\s+[^a-zA-Z]+\s+/, ' ')
+        # Why we use substitute(sub) comma to whitespace, not global substitute(gsub).
+        # the reason is the substitution applies for suffix splitting, not for replacing
+        # bad data. As we want, convert "Marvene A Gordon, JD" to "Marvene A Gordon JD", 
+        # so that the suffix will get into the split array.
+        # and, standardize suffix as '2nd' => 'II', '3rd' => 'III'
+        CONVERSION.each_pair do |finder, replacer|
+          name.gsub!(Regexp.new("\\b#{Regexp.escape(finder)}\\b", true), replacer)
+        end
+      end
+
+      def extract_suffix(str)
+        list = []
+        loop do
+          m = /(.*)[, ](.+)/.match(str)
+          break unless m
+          remaining = m[1]
+          last_part = m[2].strip
+          last_part_downcase = last_part.downcase
+          if IGNORABLE_SUFFIXES.include?(last_part_downcase)
+            list.unshift([last_part, false])
+          elsif SUFFIX_LIST.include?(last_part_downcase) || GLOBAL_SUFFIX_LIST.include?(last_part_downcase)
+            list.unshift([last_part, true])
+          else
+            break
+          end
+          str = remaining.gsub(/[, ]+$/, '').strip
+        end
+        [str, list]
+      end
+
+      def extract_prefix(str)
+        list = []
+        loop do
+          m = /(.+?)[, ](.+)/.match(str)
+          break unless m
+          remining = m[2]
+          first_part = m[1]
+          first_part_downcase = first_part.downcase
+          if IGNORABLE_PREFIXS.include?(first_part_downcase)
+            # skip words
+          elsif PREFIX_LIST.include?(first_part_downcase)
+            list.push(first_part)
+          else
+            break
+          end
+          str = remining.gsub(/^[, ]+/, '').strip
+        end
+        [str, list]
+      end
+
+      def extract_suffix_before_flipping_parts
+        remaining, list = extract_suffix(name)
+        @name = remaining
+        @suffix_list += list
+      end
+
+      def flip_parts!
+        extract_suffix_before_flipping_parts
+        parts = name.split(/,/)
+        case parts.size
+        when 1
+        when 2
+          remining, list = extract_suffix(parts[0])
+          @name = [parts[1], remining].join(' ').strip.gsub(/ +/, ' ')
+          @suffix_list += list
+        when 3
+          remining, list = extract_suffix(parts[0..1].join(' '))
+          @name = [parts[2], remining].join(' ').strip.gsub(/ +/, ' ')
+          @suffix_list += list
+        else
+          fail Error.new("name [ #{name} ] has >2 commas, don't know how to parse")
+        end
+
+        extract_prefix_after_flipping_parts
+      end
+
+      def extract_prefix_after_flipping_parts
+        remaining, list = extract_prefix(name)
+        @name = remaining
+        @prefix_list += list
+      end
+
+      def breakup!
+        parts = name.split(/[, ]+/)
+
+        # process prefix
+        @prefix = @prefix_list.join(' ') if @prefix_list.any?
+
+        # process lastname
+        # Loop around until we run into a name that is not contained in the LAST_NAME_EXTENSIONS
+        last_name_arr  = []
+        last_name_arr.push(parts.pop)
+        last_name_arr.push(parts.pop) while parts.length > 1 && LAST_NAME_EXTENSIONS.include?(parts.last.downcase)
+        @lastname = last_name_arr.reverse.join(' ')
+
+        # process firstname and middlename
+        @firstname  = parts.shift if parts.length >= 1
+        @middlename = parts.join(' ') if parts.length > 0
+        if firstname.nil? && prefix
+          @firstname = prefix
+          @prefix    = nil
+        end
+
+        # move lastname to firstname, move first suffix to lastname
+        if firstname.nil? && @suffix_list.any? && SUFFIX_CAN_BE_LASTNAME.include?(@suffix_list.first.first.downcase)
+          @firstname = lastname
+          @lastname = @suffix_list.shift.first
+        end
+
+        # move lastname to middlename, move first suffix to lastname
+        if lastname =~ /^[A-Z]\.?$/i && @suffix_list.any? && SUFFIX_CAN_BE_LASTNAME.include?(@suffix_list.first.first.downcase)
+          @middlename = [middlename, lastname].compact.join(' ')
+          @lastname = @suffix_list.shift.first
+        end
+
+        # process suffix
+        @suffix_list.delete_if { |_, ignore_able| !ignore_able }
+        @suffix = @suffix_list.any? ? @suffix_list.first.first : nil
+      end
+    end
+
     def parse_fullname(name)
-      first_name  = nil
-      middle_name = nil
-      last_name   = nil
-      prefix      = nil
-      suffix      = nil
-      
-      # replace "’" to "'"
-      name = name.gsub(/’/, "'")
-      # remove strings which contain and include in parentheses
-      # ex. 'Susan M. (Scully) Schultz'  =>  'Susan M. Schultz'
-      #     'Jay (Jung) Heum Kim'        =>  'Jay Heum Kim'
-      name = name.gsub(/\(.*?\)/, ' ').gsub(/\(|\)/, '')
-      # remove quoted strings 
-      # Darin "Derry" Ronald Anderson    => 'Darin Ronald Anderson'
-      # Nancy M. "Shelli" Egger          => 'Nancy M. Egger'  
-      # Nicole 'nikki' Adame             => 'Nicole Adame'                  
-      name = name.gsub(/".*?"/, ' ').gsub(/'.*?'/i, ' ')
-  
-      # remove curly brackets
-      # Henry C.{Harry} Wilson           => 'Henry C. Wilson'
-      # Cellestine {Steen} Armstrong     => 'Cellestine Armstrong'
-      name = name.gsub(/\{.*?\}/, ' ')
-      # remove exceptional names
-      # ex. "William . D. 'Bill' Beard"  =>  "William D. 'Bill' Beard"
-      # also this regexp can remove 
-      name = name.gsub(/\s+[^a-zA-Z]+\s+/, ' ')
-      # Why we use substitute(sub) comma to whitespace, not global substitute(gsub).
-      # the reason is the substitution applies for suffix splitting, not for replacing
-      # bad data. As we want, convert "Marvene A Gordon, JD" to "Marvene A Gordon JD", 
-      # so that the suffix will get into the split array.
-      # and, standardize suffix as '2nd' => 'II', '3rd' => 'III'
-      nameSplit   = name.gsub(',', ' ').strip.split(/\s+/).map{ |n| CONVERSION[n.downcase] || n }
-  
-      return { :last=>name } if nameSplit.length <= 1
-      
-      suffix_arr  = []
-      while (nameSplit.length > 1)
-        if IGNORABLE_SUFFIXES.include?(nameSplit.last.downcase)
-          suffix_arr.unshift([nameSplit.pop, false])
-        elsif SUFFIX_LIST.include?(nameSplit.last.downcase) || GLOBAL_SUFFIX_LIST.include?(nameSplit.last.downcase)
-          suffix_arr.unshift([nameSplit.pop, true])
-        else
-          break
-        end
-      end
-  
-      # Loop around until we run into a name that is not contained in the PREFIX_LIST
-      # ex(FL): 'Lt Col Marvene A Gordon', 'The Honorable Dexter F George'
-      prefix_arr      = []
-      while (nameSplit.length > 1)
-        if IGNORABLE_PREFIXS.include?(nameSplit.first.downcase)
-          nameSplit.shift
-        elsif PREFIX_LIST.include?(nameSplit.first.downcase)
-          prefix_arr.push(nameSplit.shift)
-        else
-          break
-        end
-      end
-      prefix = prefix_arr.join(' ') if prefix_arr.size > 0
-  
-      # Loop around until we run into a name that is not contained in the LAST_NAME_EXTENSIONS
-      last_name_arr  = []
-      last_name_arr.push(nameSplit.pop)
-      last_name_arr.push(nameSplit.pop) while nameSplit.length > 1 && LAST_NAME_EXTENSIONS.include?(nameSplit.last.downcase)
-      last_name = last_name_arr.reverse.join(' ') if last_name_arr.size > 0
-  
-      first_name  = nameSplit.shift     if nameSplit.length >= 1
-      middle_name = nameSplit.join(' ') if nameSplit.length > 0
-      if first_name.nil? && prefix
-        first_name = prefix
-        prefix     = nil
-      end
-      
-      if first_name.nil? && suffix_arr.any? && SUFFIX_CAN_BE_LASTNAME.include?(suffix_arr.first.first.downcase)
-        first_name = last_name
-        last_name = suffix_arr.shift.first
-      end
-      if last_name =~ /^[A-Z]\.?$/i && suffix_arr.any? && SUFFIX_CAN_BE_LASTNAME.include?(suffix_arr.first.first.downcase)
-        middle_name = [middle_name, last_name].compact.join(' ')
-        last_name = suffix_arr.shift.first
-      end
-      suffix_arr.delete_if{|a, b| !b}
-      suffix = suffix_arr.size == 0 ? nil : suffix_arr.first.first # only return first suffix
-      return { :last => last_name, :middle => middle_name, :first => first_name, :prefix => prefix, :suffix => suffix }
+      i = Identifier.new(name)
+      return {
+        prefix: i.prefix,
+        first: i.firstname,
+        middle: i.middlename,
+        last: i.lastname,
+        suffix: i.suffix
+      }
     end # << parse_fullname
     extend self
   end
