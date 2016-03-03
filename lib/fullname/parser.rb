@@ -262,7 +262,7 @@ module Fullname
     end
 
     def parse_fullname(name)
-      i = Identifier.new(name)
+      i = Identifier.new(name.strip)
       return {
         prefix: i.prefix,
         first: i.firstname,
