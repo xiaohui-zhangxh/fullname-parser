@@ -117,6 +117,8 @@ module Fullname
       private
 
       def sanitize!
+        # remove the spaces
+        name.strip!
         # replace "’" to "'"
         name.gsub!(/’/, "'")
         # remove strings which contain and include in parentheses
@@ -262,7 +264,7 @@ module Fullname
     end
 
     def parse_fullname(name)
-      i = Identifier.new(name.strip)
+      i = Identifier.new(name)
       return {
         prefix: i.prefix,
         first: i.firstname,
