@@ -135,10 +135,11 @@ module Fullname
         # Henry C.{Harry} Wilson           => 'Henry C. Wilson'
         # Cellestine {Steen} Armstrong     => 'Cellestine Armstrong'
         name.gsub!(/\{.*?\}/, ' ')
+        
         # remove exceptional names
         # ex. "William . D. 'Bill' Beard"  =>  "William D. 'Bill' Beard"
         # also this regexp can remove 
-        name.gsub!(/\s+[^a-zA-Z]+\s+/, ' ')
+        name.gsub!(/\s+[^a-zA-Z,]+\s+/, ' ')
         # Why we use substitute(sub) comma to whitespace, not global substitute(gsub).
         # the reason is the substitution applies for suffix splitting, not for replacing
         # bad data. As we want, convert "Marvene A Gordon, JD" to "Marvene A Gordon JD", 
