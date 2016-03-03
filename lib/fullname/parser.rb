@@ -135,6 +135,11 @@ module Fullname
         # Henry C.{Harry} Wilson           => 'Henry C. Wilson'
         # Cellestine {Steen} Armstrong     => 'Cellestine Armstrong'
         name.gsub!(/\{.*?\}/, ' ')
+        
+        # remove the space before comma
+        # Doyle , John Lorter              => Doyle, John Lorter
+        name.gsub!(/\s+,/, ',')
+        
         # remove exceptional names
         # ex. "William . D. 'Bill' Beard"  =>  "William D. 'Bill' Beard"
         # also this regexp can remove 
