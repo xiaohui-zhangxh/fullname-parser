@@ -117,6 +117,8 @@ module Fullname
       private
 
       def sanitize!
+        # remove the spaces
+        name.strip!
         # replace "’" to "'"
         name.gsub!(/’/, "'")
         # remove strings which contain and include in parentheses
