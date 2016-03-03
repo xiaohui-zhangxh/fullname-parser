@@ -261,8 +261,8 @@ module Fullname
       end
     end
 
-    def parse_fullname(name.strip)
-      i = Identifier.new(name)
+    def parse_fullname(name)
+      i = Identifier.new(name.strip)
       return {
         prefix: i.prefix,
         first: i.firstname,
